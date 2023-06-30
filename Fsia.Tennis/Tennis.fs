@@ -1,10 +1,15 @@
-﻿namespace Fsia.Tennis
+﻿module Fsia.Tennis
 
 type Player =
     | PlayerOne
     | PlayerTwo
 
-module NormalGame =
+let otherPlayer player =
+    match player with
+    | PlayerOne -> PlayerTwo
+    | PlayerTwo -> PlayerOne
+
+module Game =
     module Point =
         type Point =
             | Love
@@ -20,125 +25,95 @@ module NormalGame =
 
     open Point
 
-    type NormalScore = {
+    type PointsScore = {
         PlayerOne: Point
         PlayerTwo: Point
     }
 
     type GamePointScore = {
-        Player: Player
+        PlayerWithGamePoint: Player
         OtherPlayerPoint: Point
     }
 
+    type GameWonOtherPoint =
+        | Point of Point
+        | Forty
+
+    type GameScore = {
+        PlayerThatWon: Player
+        OtherPlayerPoint: GameWonOtherPoint
+    }
+
     type Score =
-        | NormalGame of NormalScore
+        | Points of PointsScore
         | GamePoint of GamePointScore
         | Deuce
         | Advantage of Player
+        | Game of GameScore
 
-    module LoserScore =
-        type Score =
-            | Normal of Point
-            | Forty
+    let updateScoreWhenDeuce playerThatScored = Advantage playerThatScored
 
-module GameMsg =
-    type Msg = PointScored of Player
-
-module Game =
-    open NormalGame
-    open NormalGame.Point
-    open GameMsg
-
-    type GameScore =
-        | NormalGameScore of Score
-        | NormalGameWon of Player * LoserScore.Score
-
-    let otherPlayer =
-        function
-        | PlayerOne -> PlayerTwo
-        | PlayerTwo -> PlayerOne
-
-    let updateWhenDeuce playerThatScored =
-        NormalGameScore(Advantage playerThatScored)
-
-    let updateScoreAdvantage advantagePlayer playerThatScored =
-        if advantagePlayer = playerThatScored then
-            NormalGameWon(advantagePlayer, LoserScore.Forty)
+    let updateScoreWhenAdvantage playerWithAdvantage playerThatScored =
+        if playerWithAdvantage = playerThatScored then
+            Game {
+                PlayerThatWon = playerWithAdvantage
+                OtherPlayerPoint = Forty
+            }
         else
-            NormalGameScore Deuce
+            Deuce
 
     let updateScoreWhenGamePoint
-        gamePointPlayer
+        playerWithGamePoint
         playerThatScored
         otherPlayerPoint
         =
-        if gamePointPlayer = playerThatScored then
-            NormalGameWon(gamePointPlayer, LoserScore.Normal otherPlayerPoint)
+        if playerWithGamePoint = playerThatScored then
+            Game {
+                PlayerThatWon = playerWithGamePoint
+                OtherPlayerPoint = Point otherPlayerPoint
+            }
         else
             match increment otherPlayerPoint with
-            | Some newPoint ->
-                NormalGameScore(
-                    GamePoint {
-                        Player = gamePointPlayer
-                        OtherPlayerPoint = newPoint
-                    }
-                )
-            | None -> NormalGameScore Deuce
+            | Some incrementedOtherPlayerPoint ->
+                GamePoint {
+                    PlayerWithGamePoint = playerWithGamePoint
+                    OtherPlayerPoint = incrementedOtherPlayerPoint
+                }
 
-    let updateScoreWhenNormal playerThatScored normalScore =
-        if playerThatScored = PlayerOne then
-            match increment normalScore.PlayerOne with
+            | None -> Deuce
+
+    // TODO: can we simplify this? Using helper function such as OtherPlayerPoint for example?
+    let updateScoreWhenPoints playerThatScored points =
+        match playerThatScored with
+        | PlayerOne ->
+            match increment points.PlayerOne with
             | Some incrementedPlayerOnePoint ->
-                NormalGameScore(
-                    NormalGame {
-                        normalScore with
-                            PlayerOne = incrementedPlayerOnePoint
-                    }
-                )
+                Points { points with PlayerOne = incrementedPlayerOnePoint }
+
             | None ->
-                NormalGameScore(
-                    GamePoint {
-                        Player = playerThatScored
-                        OtherPlayerPoint = normalScore.PlayerTwo
-                    }
-                )
-        else
-            match increment normalScore.PlayerTwo with
+                GamePoint { PlayerWithGamePoint = PlayerOne; OtherPlayerPoint = points.PlayerTwo }
+
+        | PlayerTwo ->
+            match increment points.PlayerTwo with
             | Some incrementedPlayerTwoPoint ->
-                NormalGameScore(
-                    NormalGame {
-                        normalScore with
-                            PlayerTwo = incrementedPlayerTwoPoint
-                    }
-                )
+                Points { points with PlayerTwo = incrementedPlayerTwoPoint }
+            
             | None ->
-                NormalGameScore(
-                    GamePoint {
-                        Player = playerThatScored
-                        OtherPlayerPoint = normalScore.PlayerOne
-                    }
-                )
+                GamePoint { PlayerWithGamePoint = PlayerTwo; OtherPlayerPoint = points.PlayerOne }
+
 
     let updateScore score playerThatScored =
         match score with
-        | NormalGameScore(NormalGame normalScore) ->
-            updateScoreWhenNormal playerThatScored normalScore
+        | Game gameScore ->
+            Game gameScore
 
-        | NormalGameScore(GamePoint gamePointScore) ->
-            updateScoreWhenGamePoint
-                gamePointScore.Player
-                playerThatScored
-                gamePointScore.OtherPlayerPoint
+        | Deuce -> updateScoreWhenDeuce playerThatScored
 
-        | NormalGameScore(Deuce) -> updateWhenDeuce playerThatScored
+        | Advantage playerWithAdvantage ->
+            updateScoreWhenAdvantage playerWithAdvantage playerThatScored
 
-        | NormalGameScore(Advantage advantagePlayer) ->
-            updateScoreAdvantage advantagePlayer playerThatScored
+        | GamePoint gamePointScore -> 
+            updateScoreWhenGamePoint gamePointScore.PlayerWithGamePoint playerThatScored gamePointScore.OtherPlayerPoint
 
-        | NormalGameWon(playerThatWon, otherPlayerScore) ->
-            NormalGameWon(playerThatWon, otherPlayerScore)
-
-
-    let updateGame msg score =
-        match msg with
-        | PointScored playerThatScored -> updateScore score playerThatScored
+        | Points points -> 
+            updateScoreWhenPoints playerThatScored points

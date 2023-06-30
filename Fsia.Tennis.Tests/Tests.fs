@@ -4,100 +4,87 @@ open FsCheck.FSharp
 open FsCheck.Xunit
 open Fsia.Tennis
 open Swensen.Unquote
+open Game
 
 [<Property>]
 let ``When deuce, the score updates correctly`` (playerThatScored: Player) =
-    let actual = Game.updateWhenDeuce playerThatScored
+    let actual = updateScoreWhenDeuce playerThatScored
 
-    test
-        <@
-            actual = Game.GameScore.NormalGameScore(
-                NormalGame.Advantage playerThatScored
-            )
-        @>
+    test <@ actual = Advantage playerThatScored @>
 
 [<Property>]
 let ``Given advantage, when advantaged player scores, the score is correct``
     (advantagedPlayer: Player)
     =
-    let actual = Game.updateScoreAdvantage advantagedPlayer advantagedPlayer
+    let actual = updateScoreWhenAdvantage advantagedPlayer advantagedPlayer
 
-    test
-        <@
-            actual = Game.NormalGameWon(
-                advantagedPlayer,
-                NormalGame.LoserScore.Forty
-            )
-        @>
+    test <@ actual = Game { PlayerThatWon = advantagedPlayer; OtherPlayerPoint = Forty } @>
 
 [<Property>]
 let ``Given advantage, when other player than advantagedPlayer scores, the score is correct``
     (advantagedPlayer: Player)
     =
-    let otherPlayer = Game.otherPlayer advantagedPlayer
-    let actual = Game.updateScoreAdvantage advantagedPlayer otherPlayer
+    let otherPlayer = otherPlayer advantagedPlayer
+    let actual = updateScoreWhenAdvantage advantagedPlayer otherPlayer
 
-    test <@ actual = Game.NormalGameScore NormalGame.Deuce @>
+    test <@ actual = Deuce @>
 
 [<Property>]
 let ``Given GamePoint, when player with GamePoint scores, the score is correct``
     (
         playerThatScored: Player,
-        otherPlayerPoint: NormalGame.Point.Point
+        otherPlayerPoint: Point.Point
     ) =
     let actual =
-        Game.updateScoreWhenGamePoint
+        updateScoreWhenGamePoint
             playerThatScored
             playerThatScored
             otherPlayerPoint
 
-    let loserScorePoint = NormalGame.LoserScore.Normal otherPlayerPoint
-
-    test <@ actual = Game.NormalGameWon(playerThatScored, loserScorePoint) @>
+    test <@ actual = Game { PlayerThatWon = playerThatScored; OtherPlayerPoint = Point otherPlayerPoint } @>
 
 [<Property>]
 let ``Given player: 40 - other: 30, when other player scores, the score is correct``
-    (otherPlayer: Player)
+    (playerThatScored: Player)
     =
-    let player = Game.otherPlayer otherPlayer
+    let playerWithGamePoint = otherPlayer playerThatScored
 
     let actual =
-        Game.updateScoreWhenGamePoint player otherPlayer NormalGame.Point.Thirty
+        updateScoreWhenGamePoint playerWithGamePoint playerThatScored Point.Thirty
 
-    test <@ actual = Game.NormalGameScore NormalGame.Deuce @>
+    test <@ actual = Deuce @>
 
 [<Property>]
 let ``Given player: 40 - other: < 30, when other player scores, the score is correct``
-    (otherPlayer: Player)
+    (playerThatScored: Player)
     =
-    let player = Game.otherPlayer otherPlayer
+    let playerWithGamePoint = otherPlayer playerThatScored
 
     let otherPlayerPointGen =
-        Gen.elements [ NormalGame.Point.Love; NormalGame.Point.Fifteen ]
+        Gen.elements [ Point.Love; Point.Fifteen ]
         |> Arb.fromGen
 
-    Prop.forAll otherPlayerPointGen (fun otherPlayerPoint ->
+    Prop.forAll otherPlayerPointGen (fun playerThatScoredPoint ->
         let actual =
-            Game.updateScoreWhenGamePoint player otherPlayer otherPlayerPoint
+            updateScoreWhenGamePoint playerWithGamePoint playerThatScored playerThatScoredPoint
 
         let expected =
-            NormalGame.Point.increment otherPlayerPoint
-            |> Option.map (fun newOtherPlayerPoint ->
-                Game.NormalGameScore(
-                    NormalGame.GamePoint {
-                        Player = player
-                        OtherPlayerPoint = newOtherPlayerPoint
+            Point.increment playerThatScoredPoint
+            |> Option.map (fun incrementedPlayerThatScoredPoint ->
+                    GamePoint {
+                        PlayerWithGamePoint = playerWithGamePoint
+                        OtherPlayerPoint = incrementedPlayerThatScoredPoint
                     }
-                ))
+                )
 
         test <@ Some actual = expected @>)
 
 [<Property>]
 let ``updateScore function handles all input``
     (
-        gameScore: Game.GameScore,
+        gameScore: Game.Score,
         playerThatScored: Player
     ) =
     // Sanity check that the updateScore function does not crash
-    Game.updateScore gameScore playerThatScored
+    updateScore gameScore playerThatScored
     |> ignore
