@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\demo\Fsia.Demo.fsproj" />
+    <ProjectReference Include="..\Fsia.Tennis\Fsia.Tennis.fsproj" />
   </ItemGroup>
 
 </Project>
