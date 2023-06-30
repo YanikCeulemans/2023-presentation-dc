@@ -79,4 +79,5 @@ Temporary Items
 # End of https://www.toptal.com/developers/gitignore/api/fsharp,visualstudiocode,macos,dotnetcore
 
 presentation/
+demo/
 TestResults/
