@@ -1,0 +1,12 @@
+{
+    "presentation-mode.configBackup": {
+        "window.autoDetectColorScheme": "undefined",
+        "editor.fontSize": "undefined",
+        "editor.fontLigatures": "undefined",
+        "terminal.integrated.fontSize": "undefined",
+        "editor.matchBrackets": "undefined",
+        "editor.minimap.enabled": "undefined",
+        "editor.scrollbar.verticalScrollbarSize": "undefined",
+        "workbench.colorTheme": "undefined"
+    }
+}

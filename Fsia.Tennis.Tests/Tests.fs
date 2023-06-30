@@ -1,10 +1,8 @@
 module Tests
 
-open System
-open Xunit
 open FsCheck.FSharp
 open FsCheck.Xunit
-open Fsia.Demo.Tennis
+open Fsia.Tennis
 open Swensen.Unquote
 
 [<Property>]
