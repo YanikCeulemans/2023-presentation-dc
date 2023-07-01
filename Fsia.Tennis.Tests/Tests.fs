@@ -18,7 +18,13 @@ let ``Given advantage, when advantaged player scores, the score is correct``
     =
     let actual = updateScoreWhenAdvantage advantagedPlayer advantagedPlayer
 
-    test <@ actual = Game { PlayerThatWon = advantagedPlayer; OtherPlayerPoint = Forty } @>
+    test
+        <@
+            actual = Game {
+                PlayerThatWon = advantagedPlayer
+                OtherPlayerPoint = Forty
+            }
+        @>
 
 [<Property>]
 let ``Given advantage, when other player than advantagedPlayer scores, the score is correct``
@@ -41,7 +47,13 @@ let ``Given GamePoint, when player with GamePoint scores, the score is correct``
             playerThatScored
             otherPlayerPoint
 
-    test <@ actual = Game { PlayerThatWon = playerThatScored; OtherPlayerPoint = Point otherPlayerPoint } @>
+    test
+        <@
+            actual = Game {
+                PlayerThatWon = playerThatScored
+                OtherPlayerPoint = Point otherPlayerPoint
+            }
+        @>
 
 [<Property>]
 let ``Given player: 40 - other: 30, when other player scores, the score is correct``
@@ -50,7 +62,10 @@ let ``Given player: 40 - other: 30, when other player scores, the score is corre
     let playerWithGamePoint = otherPlayer playerThatScored
 
     let actual =
-        updateScoreWhenGamePoint playerWithGamePoint playerThatScored Point.Thirty
+        updateScoreWhenGamePoint
+            playerWithGamePoint
+            playerThatScored
+            Point.Thirty
 
     test <@ actual = Deuce @>
 
@@ -66,16 +81,18 @@ let ``Given player: 40 - other: < 30, when other player scores, the score is cor
 
     Prop.forAll otherPlayerPointGen (fun playerThatScoredPoint ->
         let actual =
-            updateScoreWhenGamePoint playerWithGamePoint playerThatScored playerThatScoredPoint
+            updateScoreWhenGamePoint
+                playerWithGamePoint
+                playerThatScored
+                playerThatScoredPoint
 
         let expected =
             Point.increment playerThatScoredPoint
             |> Option.map (fun incrementedPlayerThatScoredPoint ->
-                    GamePoint {
-                        PlayerWithGamePoint = playerWithGamePoint
-                        OtherPlayerPoint = incrementedPlayerThatScoredPoint
-                    }
-                )
+                GamePoint {
+                    PlayerWithGamePoint = playerWithGamePoint
+                    OtherPlayerPoint = incrementedPlayerThatScoredPoint
+                })
 
         test <@ Some actual = expected @>)
 

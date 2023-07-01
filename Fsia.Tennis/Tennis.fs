@@ -30,6 +30,23 @@ module Game =
         PlayerTwo: Point
     }
 
+    module PointsScore =
+        let pointForPlayer pointsScore player =
+            match player with
+            | PlayerOne -> pointsScore.PlayerOne
+            | PlayerTwo -> pointsScore.PlayerTwo
+
+        let updatePlayerPoint pointsScore player point =
+            match player with
+            | PlayerOne -> {
+                pointsScore with
+                    PlayerOne = point
+              }
+            | PlayerTwo -> {
+                pointsScore with
+                    PlayerTwo = point
+              }
+
     type GamePointScore = {
         PlayerWithGamePoint: Player
         OtherPlayerPoint: Point
@@ -82,38 +99,40 @@ module Game =
 
             | None -> Deuce
 
-    // TODO: can we simplify this? Using helper function such as OtherPlayerPoint for example?
     let updateScoreWhenPoints playerThatScored points =
-        match playerThatScored with
-        | PlayerOne ->
-            match increment points.PlayerOne with
-            | Some incrementedPlayerOnePoint ->
-                Points { points with PlayerOne = incrementedPlayerOnePoint }
+        let playerThatScoredPoint =
+            PointsScore.pointForPlayer points playerThatScored
 
-            | None ->
-                GamePoint { PlayerWithGamePoint = PlayerOne; OtherPlayerPoint = points.PlayerTwo }
+        match increment playerThatScoredPoint with
+        | Some incrementedPoint ->
+            PointsScore.updatePlayerPoint
+                points
+                playerThatScored
+                incrementedPoint
+            |> Points
 
-        | PlayerTwo ->
-            match increment points.PlayerTwo with
-            | Some incrementedPlayerTwoPoint ->
-                Points { points with PlayerTwo = incrementedPlayerTwoPoint }
-            
-            | None ->
-                GamePoint { PlayerWithGamePoint = PlayerTwo; OtherPlayerPoint = points.PlayerOne }
-
+        | None ->
+            GamePoint {
+                PlayerWithGamePoint = playerThatScored
+                OtherPlayerPoint =
+                    PointsScore.pointForPlayer
+                        points
+                        (otherPlayer playerThatScored)
+            }
 
     let updateScore score playerThatScored =
         match score with
-        | Game gameScore ->
-            Game gameScore
+        | Game gameScore -> Game gameScore
 
         | Deuce -> updateScoreWhenDeuce playerThatScored
 
         | Advantage playerWithAdvantage ->
             updateScoreWhenAdvantage playerWithAdvantage playerThatScored
 
-        | GamePoint gamePointScore -> 
-            updateScoreWhenGamePoint gamePointScore.PlayerWithGamePoint playerThatScored gamePointScore.OtherPlayerPoint
+        | GamePoint gamePointScore ->
+            updateScoreWhenGamePoint
+                gamePointScore.PlayerWithGamePoint
+                playerThatScored
+                gamePointScore.OtherPlayerPoint
 
-        | Points points -> 
-            updateScoreWhenPoints playerThatScored points
+        | Points points -> updateScoreWhenPoints playerThatScored points

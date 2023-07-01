@@ -1,6 +1,7 @@
 {
     "presentation-mode.configBackup": {
         "window.autoDetectColorScheme": "undefined",
+        "gitlens.codeLens.enabled": "undefined",
         "editor.fontSize": "undefined",
         "editor.fontLigatures": "undefined",
         "terminal.integrated.fontSize": "undefined",
