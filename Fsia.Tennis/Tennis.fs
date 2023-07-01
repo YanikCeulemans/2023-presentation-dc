@@ -72,3 +72,75 @@ module Game =
         PlayerOne = Love
         PlayerTwo = Love
     }
+
+    let updateScoreWhenDeuce playerThatScored = Advantage playerThatScored
+
+    let updateScoreWhenAdvantage playerWithAdvantage playerThatScored =
+        if playerWithAdvantage = playerThatScored then
+            Game {
+                PlayerThatWon = playerWithAdvantage
+                OtherPlayerPoint = Forty
+            }
+        else
+            Deuce
+
+    let updateScoreWhenGamePoint
+        playerWithGamePoint
+        playerThatScored
+        otherPlayerPoint
+        =
+        if playerWithGamePoint = playerThatScored then
+            Game {
+                PlayerThatWon = playerWithGamePoint
+                OtherPlayerPoint = Point otherPlayerPoint
+            }
+        else
+            match increment otherPlayerPoint with
+            | Some incrementedOtherPlayerPoint ->
+                GamePoint {
+                    PlayerWithGamePoint = playerWithGamePoint
+                    OtherPlayerPoint = incrementedOtherPlayerPoint
+                }
+
+            | None -> Deuce
+
+    let updateScoreWhenPoints playerThatScored points =
+        let playerThatScoredPoint =
+            PointsScore.pointForPlayer points playerThatScored
+
+        match increment playerThatScoredPoint with
+        | Some incrementedPoint ->
+            PointsScore.updatePlayerPoint
+                points
+                playerThatScored
+                incrementedPoint
+            |> Points
+
+        | None ->
+            GamePoint {
+                PlayerWithGamePoint = playerThatScored
+                OtherPlayerPoint =
+                    PointsScore.pointForPlayer
+                        points
+                        (otherPlayer playerThatScored)
+            }
+
+    let updateScore score playerThatScored =
+        match score with
+        | Game gameScore -> Game gameScore
+
+        | Deuce -> updateScoreWhenDeuce playerThatScored
+
+        | Advantage playerWithAdvantage ->
+            updateScoreWhenAdvantage playerWithAdvantage playerThatScored
+
+        | GamePoint gamePointScore ->
+            updateScoreWhenGamePoint
+                gamePointScore.PlayerWithGamePoint
+                playerThatScored
+                gamePointScore.OtherPlayerPoint
+
+        | Points points -> updateScoreWhenPoints playerThatScored points
+
+    let updateScoreForSeq score playersThatScored =
+        Seq.fold updateScore score playersThatScored

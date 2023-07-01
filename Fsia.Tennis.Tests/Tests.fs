@@ -4,6 +4,7 @@ open Swensen.Unquote
 open FsCheck
 open FsCheck.Xunit
 open Fsia.Tennis
+open Game
 
 [<Property>]
 let ``When deuce, the score updates correctly`` (playerThatScored: Player) =
