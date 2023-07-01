@@ -68,6 +68,11 @@ module Game =
         | Advantage of Player
         | Game of GameScore
 
+    let newGame = Points {
+        PlayerOne = Love
+        PlayerTwo = Love
+    }
+
     let updateScoreWhenDeuce playerThatScored = Advantage playerThatScored
 
     let updateScoreWhenAdvantage playerWithAdvantage playerThatScored =
@@ -136,3 +141,6 @@ module Game =
                 gamePointScore.OtherPlayerPoint
 
         | Points points -> updateScoreWhenPoints playerThatScored points
+
+    let updateScoreForSeq score playersThatScored =
+        Seq.fold updateScore score playersThatScored
